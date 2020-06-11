@@ -231,7 +231,6 @@ class BaksysBackup:
         override = BaksysUtils.loadOption(option, 'override', False)
         
         if os.path.exists(path):
-            print('write', path)
             if not override:
                 return FileExistsError('[BackupSave] existing file \'%s\'.' % path)
         
