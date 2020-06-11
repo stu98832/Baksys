@@ -18,9 +18,22 @@ class BaksysLocalBackup:
         this.onRestoreProgress = BaksysEvent()
         this.onRestoreFinished = BaksysEvent()
         
+    def _checkPathValid(this, path):
+        if '..' in path:
+            raise RuntimeError('unsafe path \'%s\' denied!' % path)
+        
+    def deleteBackup(path):
+        this._checkPathValid(path)
+        fullpath  = os.path.join(this.backupPath, path)
+        
+        if not os.path.exists(fullpath):
+            raise RuntimeError('can\'t find backup file \'%s\' at \'%s\'' % (path, this.backupPath))
+            
+        os.remove(fullpath)
+        
     def getBackup(path):
-        backupDir  = config.get('backup_path')
-        backupFile = os.path.join(backupDir, path)
+        this._checkPathValid(path)
+        backupFile = os.path.join(this.backupPath, path)
         
         if not os.path.exists(backupFile):
             return None

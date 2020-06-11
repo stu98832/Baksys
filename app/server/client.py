@@ -19,16 +19,32 @@ class BaksysUser:
         this.socket.close()
         this.onDisconnect(this)
         
+    def _checkLogin(this):
+        if not this.login:
+            this.socket.disconnect()
+        return this.login
+        
     def _handleMessage(this, socket, message):
         header = message.readByte()
         if   header == packet.BAKSYS_LOGIN_REQUEST:
             username = message.readString()
             password = message.readString()
             handler.handleLogin(this, username, password)
+            
+        elif header == packet.BAKSYS_LIST_REQUEST:
+            if this._checkLogin():
+                handler.handleListRequest(this)
+            
+        elif header == packet.BAKSYS_DELETE_REQUEST:
+            if this._checkLogin():
+                deletePath = message.readString()
+                handler.handleDeleteRequest(this, deletePath)
+            
         elif header == packet.BAKSYS_UPDATE_LIST_REQUEST:
+            this._checkLogin()
+            # TODO
             pass
-        elif header == packet.BAKSYS_UPLOAD_RESPONSE:
-            pass
+            
         else:
             pass
         
