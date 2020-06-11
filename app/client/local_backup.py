@@ -1,7 +1,10 @@
 import os
+import shutil
+import tempfile
 import baksys.config as config
-from   baksys.backup import *
-from   baksys.event  import *
+from   baksys.backup      import *
+from   baksys.event       import *
+from   app.client.setting import *
 
 class BaksysLocalBackup:
     def __init__(this):
@@ -82,14 +85,14 @@ class BaksysLocalBackup:
                 totalDirCount,          \
                 totalFileCount ))
             this.onRestoreFinished.invoke(eventArgs)
-        except (Exception, BaseException) as e:
-            eventArgs = BaksysEventArgs()
-            eventArgs.message = 'restore failed.'
-            eventArgs.error   = e
-            this.onRestoreFailed.invoke(eventArgs)
         except KeyboardInterrupt:
             eventArgs = BaksysEventArgs()
             eventArgs.message = 'restore was interrupted.'
+            eventArgs.error   = e
+            this.onRestoreFailed.invoke(eventArgs)
+        except (Exception, BaseException) as e:
+            eventArgs = BaksysEventArgs()
+            eventArgs.message = 'restore failed.'
             eventArgs.error   = e
             this.onRestoreFailed.invoke(eventArgs)
     # end restore
@@ -122,6 +125,7 @@ class BaksysLocalBackup:
                 'finishedFileCount' : 0,\
                 'finishedDirCount'  : 0 \
             }
+            temppath = os.path.join(BAKSYS_TEMPDIR, 'tmp_'+os.path.basename(path))
                 
             backup = BaksysBackup()
             backup.sPath = source
@@ -139,7 +143,11 @@ class BaksysLocalBackup:
                 else:
                     this.backupState['totalFileCount'] += 1
             
-            backup.save(backupFile, override = override)
+            backup.save(temppath, override = override)
+            # move temp file 
+            if os.path.exists(backupFile):
+                os.remove(backupFile)
+            shutil.move(temppath, backupFile)
             
             # invoke finished event
             eventArgs = BaksysEventArgs()
@@ -153,18 +161,18 @@ class BaksysLocalBackup:
                 this.backupState['totalDirCount'], \
                 this.backupState['totalFileCount'])
             this.onBackupFinished.invoke(eventArgs)
-        except (Exception, BaseException) as e:
-            if os.path.exists(backupFile): 
-                os.remove(backupFile)
-            eventArgs = BaksysEventArgs()
-            eventArgs.message = 'backup failed.'
-            eventArgs.error   = e
-            this.onBackupFailed.invoke(eventArgs)
-        except KeyboardInterrupt:
-            if os.path.exists(backupFile): 
-                os.remove(backupFile)
+        except KeyboardInterrupt as e:
+            if os.path.exists(temppath): 
+                os.remove(temppath)
             eventArgs = BaksysEventArgs()
             eventArgs.message = 'backup was interrupted.'
+            eventArgs.error   = e
+            this.onBackupFailed.invoke(eventArgs)
+        except (Exception, BaseException) as e:
+            if os.path.exists(temppath): 
+                os.remove(temppath)
+            eventArgs = BaksysEventArgs()
+            eventArgs.message = 'backup failed.'
             eventArgs.error   = e
             this.onBackupFailed.invoke(eventArgs)
     # end backup
