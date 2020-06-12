@@ -84,6 +84,7 @@ class BaksysLocalBackup:
                 eventArgs = BaksysEventArgs()
                 eventArgs.progress = finishedFileCount/totalFileCount
                 this.onRestoreProgress.invoke(eventArgs)
+            backup.close()
             
             # invoke finished event
             eventArgs = BaksysEventArgs()
@@ -155,6 +156,7 @@ class BaksysLocalBackup:
                     this.backupState['totalFileCount'] += 1
             
             backup.save(temppath, override = override)
+            backup.close()
             # move temp file 
             if os.path.exists(backupFile):
                 os.remove(backupFile)
@@ -240,6 +242,7 @@ class BaksysLocalBackup:
                         'size'        : backup.nSize, \
                         'crc'         : backup.nCRC   \
                     })
+                    backup.close()
                     
         return result
         

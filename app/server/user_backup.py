@@ -59,6 +59,7 @@ class BaksysUserBackup:
                         'size'        : backup.nSize, \
                         'crc'         : backup.nCRC   \
                     })
+                    backup.close()
                     
         return result
         
