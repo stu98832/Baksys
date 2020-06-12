@@ -13,7 +13,8 @@ config = { }
 if not config:
     config['backup_path'] = BAKSYS_REMOTE
     if os.path.exists(BAKSYS_CONFIG): 
-        config = json.load(BAKSYS_CONFIG)
+        with open(BAKSYS_CONFIG, 'r') as file:
+            config = json.load(file)
         
 logger = BaksysLogger(BAKSYS_ERROR_LOG)
 

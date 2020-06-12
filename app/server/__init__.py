@@ -1,8 +1,7 @@
 import os
-from   baksys.net         import *
-from   app.server.setting import *
-from   app.server.client  import *
-import app.com.packet as packet
+from   baksys.net            import *
+from   app.server.setting    import *
+from   app.server.client     import *
 
 class BaksysServerApp:
     def __init__(this):

@@ -115,16 +115,15 @@ class BaksysClientApp:
             print('error on remote-upload :', e)
         
     def cmdRemoteDelete(this):
-        try:
-            if not this.checkRemoteConnection():
-                return
-            path = input('remote backup : ')
-            result = this.remoteBackup.deleteBackup(path)
-            if result:
-                print('delete finish.')
-        except Exception as e:
-            logger.error('error on remote-delete :', e)
-            print('error on remote-delete :', e)
+        if not this.checkRemoteConnection():
+            return
+        path = input('remote backup : ')
+        result = this.remoteBackup.deleteBackup(path)
+        if result:
+            print('delete finish.')
+        else:
+            logger.error('error on remote-delete :', this.remoteBackup.lastOperationError)
+            print('error on remote-delete :', this.remoteBackup.lastOperationError)
             
     def cmdRemoteUpdate(this):
         try:

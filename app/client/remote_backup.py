@@ -1,13 +1,16 @@
 import os
 import threading
-from   baksys.net     import *
-import app.com.packet as packet
+from   baksys.net import *
+import app.com.packet        as packet
+import app.com.packet.login  as loginPacket
+import app.com.packet.backup as backupPacket
 
 class BaksysRemoteBackup:
     def __init__(this):
-        this.socket         = BaksysClientSocket()
-        this.responseLock   = threading.Event()
-        this.remoteResponse = None
+        this.socket             = BaksysClientSocket()
+        this.responseLock       = threading.Event()
+        this.remoteResponse     = None
+        this.lastOperationError = ''
         
     def isConnecting(this):
         return this.socket.isConnecting()
@@ -29,15 +32,15 @@ class BaksysRemoteBackup:
         this.socket.disconnect()
         
     def login(this, username, password):
-        this.socket.send(packet.loginRequest(username, password))
+        this.socket.send(loginPacket.loginRequest(username, password))
         return this._waitForResponse()
         
     def getUpdateList(this, localList):
-        this.socket.send(packet.updateListRequest(localList))
+        this.socket.send(backupPacket.updateListRequest(localList))
         return this._waitForResponse()
         
     def getList(this):
-        this.socket.send(packet.backupListRequest())
+        this.socket.send(backupPacket.listRequest())
         return this._waitForResponse()
         
     def uploadBackup(this, backup, path):
@@ -45,7 +48,7 @@ class BaksysRemoteBackup:
         pass
         
     def deleteBackup(this, name):
-        this.socket.send(packet.backupDeleteRequest(name))
+        this.socket.send(backupPacket.deleteRequest(name))
         return this._waitForResponse()
             
     def _waitForResponse(this):
@@ -77,25 +80,30 @@ class BaksysRemoteBackup:
     def _onPacket(this, socket, message):
         header = message.readByte()
         
-        if   header == packet.BAKSYS_LOGIN_RESPONSE:
-            this._setResponse(message.readByte() == 1)
+        if   header == packet.RESPONSE_OPERATION:
+            success = (message.readByte() == 1)
+            if not success:
+                this.lastOperationError = message.readString()
+            this._setResponse(success)
             
-        elif header == packet.BAKSYS_LIST_RESPONSE:
-            count = message.readEncodingInt()
-            backupList = []
-            for i in range(count):
-                path    = message.readString()
-                orgpath = message.readString()
-                size    = message.readLong()
-                crc     = message.readUInt()
-                backupList.append({                         \
-                    'name'        : os.path.basename(path), \
-                    'path'        : path,                   \
-                    'origin_path' : orgpath,                \
-                    'size'        : size,                   \
-                    'crc'         : crc,                    \
-                })
-            this._setResponse(backupList)
+        elif header == packet.RESPONSE_BACKUP:
+            subtype = message.readByte()
+            if subtype == packet.backup.REQUEST_TYPE_LIST:
+                count = message.readEncodingInt()
+                backupList = []
+                for i in range(count):
+                    path    = message.readString()
+                    orgpath = message.readString()
+                    size    = message.readLong()
+                    crc     = message.readUInt()
+                    backupList.append({                         \
+                        'name'        : os.path.basename(path), \
+                        'path'        : path,                   \
+                        'origin_path' : orgpath,                \
+                        'size'        : size,                   \
+                        'crc'         : crc,                    \
+                    })
+                this._setResponse(backupList)
             
         elif header == packet.BAKSYS_UPDATE_LIST_RESPONSE:
             count = message.readEncodingInt()
@@ -104,15 +112,6 @@ class BaksysRemoteBackup:
                 updateList.append(message.readString())
             this._setResponse(updateList)
             
-        elif header == packet.BAKSYS_DELETE_RESPONSE:
-            success = (message.readByte() == 1)
-            if success:
-                this._setResponse(success)
-            else:
-                this._setResponseError(message.readString())
-            
-        elif header == packet.BAKSYS_LOGIN_RESPONSE:
-            this._setResponse(message.readByte() == 1)
         else:
             # TODO: process invalid packet
             pass

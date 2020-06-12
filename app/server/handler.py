@@ -1,4 +1,6 @@
-import app.com.packet as packet
+import app.com.packet        as packet
+import app.com.packet.login  as loginPacket
+import app.com.packet.backup as backupPacket
 from   app.server.user_backup import *
 
 BAKSYS_ROOT_USERNAME = 'root'
@@ -13,15 +15,17 @@ def handleLogin(client, username, password):
         client.backup   = BaksysUserBackup(username)
     
     # send response packet
-    client.socket.send(packet.loginResponse(success))
+    client.socket.send(packet.operationResponse(success))
     
-def handleListRequest(client):
-    backupList = client.backup.getList()
-    client.socket.send(packet.backupListResponse(backupList))
-    
-def handleDeleteRequest(client, path):
-    try:
-        client.backup.deleteBackup(path)
-        client.socket.send(packet.backupDeleteResponse(True))
-    except Exception as e:
-        client.socket.send(packet.backupDeleteResponse(False, str(e)))
+def handleBackupRequest(client, message):
+    subtype = message.readByte()
+    if   subtype == backupPacket.REQUEST_TYPE_LIST:
+        backupList = client.backup.getList()
+        client.socket.send(backupPacket.listResponse(backupList))
+    elif subtype == backupPacket.REQUEST_TYPE_DELETE:
+        deletePath = message.readString()
+        try:
+            client.backup.deleteBackup(deletePath)
+            client.socket.send(packet.operationResponse(True))
+        except Exception as e:
+            client.socket.send(packet.operationResponse(False, str(e)))
