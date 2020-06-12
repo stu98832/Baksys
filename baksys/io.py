@@ -251,12 +251,13 @@ class BaksysBinaryWriter:
             this.writeBuffer(buffer)
         
     def writeEncodingInt(this, value:int):
-        buf = [value & 0x7F]
-        val = value;
+        val  = value;
+        code = lambda x: (0x80 if (val > 0x7F) else 0x00) | (x&0x7F)
+        buf  = []
         
-        while (val & 0x80) > 0:
+        while val > 0:
+            buf.append(code(val))
             val = val >> 7;
-            buf.append(value & 0x7F)
             
         this.writeBuffer(bytes(buf))
         

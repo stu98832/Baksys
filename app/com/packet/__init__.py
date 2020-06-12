@@ -15,5 +15,4 @@ def operationResponse(success, reason = ''):
     writer.writeByte(1 if success else 0)
     if not success:
         writer.writeString(reason)
-    print(packet.getBuffer())
     return packet.getBuffer()
