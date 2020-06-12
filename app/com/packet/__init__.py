@@ -7,6 +7,8 @@ REQUEST_DOWNLOAD   = 0x04
 
 RESPONSE_OPERATION = 0x01
 RESPONSE_BACKUP    = 0x02
+RESPONSE_UPLOAD    = 0x03
+RESPONSE_DOWNLOAD  = 0x04
 
 def operationResponse(success, reason = ''):
     packet = BaksysMemoryStream()

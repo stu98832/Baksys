@@ -19,8 +19,12 @@ class BaksysClientApp:
         this.localBackup.onBackupProgress  += this.onBackupProgress
         this.localBackup.onBackupFinished  += lambda e: print('\n'+e.message)
         this.remoteBackup = BaksysRemoteBackup()
+        this.remoteBackup.onDownloadProcess += this.onDownloadProcess
     
     # events
+    def onDownloadProcess(this, e):
+        console.progressBar('%3d%%'%int(e.progress*100), e.progress)
+        
     def onRestoreProgress(this, e):
         console.progressBar('%3d%%'%int(e.progress*100), e.progress)
         
@@ -55,6 +59,8 @@ class BaksysClientApp:
         #     'func':this.cmdRemoteUpload }
         this.commands['remote-delete'] = { 'desc':'update remote backups', \
             'func':this.cmdRemoteDelete }
+        this.commands['remote-download'] = { 'desc':'update remote backups', \
+            'func':this.cmdRemoteDownload }
         # this.commands['remote-update'] = { 'desc':'update remote backups', \
         #     'func':this.cmdRemoteUpdate }
         
@@ -94,7 +100,26 @@ class BaksysClientApp:
             return True
         except KeyboardInterrupt:
             this.remoteBackup.disconnect()
+            print('^C')
+            
+    def cmdRemoteDownload(this):
+        try:
+            if not this.checkRemoteConnection(): return
+            path = input('remote backup : ')
+            result = this.remoteBackup.downloadRequest(path)
+            if not result:
+                print('download failed :', this.remoteBackup.lastOperationError)
+                return
+            print('start download....')
+            result = this.remoteBackup.downloadBackup()
             print()
+            if not result:
+                print('download failed :', this.remoteBackup.lastOperationError)
+                return
+            print('download finished')
+        except KeyboardInterrupt:
+            this.remoteBackup.downloadInterrupt()
+            print('\noperation of download has been interrupted.')
         
     def cmdRemoteList(this):
         try:
@@ -187,6 +212,9 @@ class BaksysClientApp:
                 return 
             elif len(os.listdir(path)) > 0:
                 override = console.askYesNo('directory \'%s\' is not empty, are you want to override?')
+                if not override:
+                    print('restore operation canceled.')
+                    return
         
         print('start restore')
         this.localBackup.restore(backup, path, override = override)

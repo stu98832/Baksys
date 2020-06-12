@@ -1,5 +1,6 @@
 import os
 import shutil
+from   random             import random
 from   baksys.backup      import *
 from   baksys.event       import *
 from   app.client.setting import *
@@ -137,7 +138,9 @@ class BaksysLocalBackup:
                 'finishedFileCount' : 0,\
                 'finishedDirCount'  : 0 \
             }
-            temppath = os.path.join(BAKSYS_TEMPDIR, 'tmp_'+os.path.basename(path))
+            temppath = ''
+            while temppath == '' or os.path.exists(temppath):
+                temppath = os.path.join(BAKSYS_TEMPDIR, 'tmp_%08X'%int(random()*0x100000000))
                 
             backup = BaksysBackup()
             backup.sPath = source

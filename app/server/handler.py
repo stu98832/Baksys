@@ -1,3 +1,4 @@
+import threading
 import app.com.packet        as packet
 import app.com.packet.login  as loginPacket
 import app.com.packet.backup as backupPacket
@@ -29,3 +30,13 @@ def handleBackupRequest(client, message):
             client.socket.send(packet.operationResponse(True))
         except Exception as e:
             client.socket.send(packet.operationResponse(False, str(e)))
+            
+def handleDownloadRequest(client, message):
+    subtype = message.readByte()
+    if subtype == backupPacket.UPLOAD_DOWNLOAD_START:
+        downloadPath = message.readString()
+        try:
+            client.backup.startUpload(client, downloadPath)
+        except Exception as e:
+            client.socket.send(packet.operationResponse(False, str(e)))
+    

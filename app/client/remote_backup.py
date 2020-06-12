@@ -1,6 +1,10 @@
 import os
+import shutil
 import threading
-from   baksys.net import *
+from   random              import random
+from   baksys.net          import *
+from   baksys.event        import *
+from   app.client.setting  import *
 import app.com.packet        as packet
 import app.com.packet.login  as loginPacket
 import app.com.packet.backup as backupPacket
@@ -9,8 +13,10 @@ class BaksysRemoteBackup:
     def __init__(this):
         this.socket             = BaksysClientSocket()
         this.responseLock       = threading.Event()
-        this.remoteResponse     = None
+        this.remoteResponse     = { }
+        this.fileOperation      = { }
         this.lastOperationError = ''
+        this.onDownloadProcess  = BaksysEvent()
         
     def isConnecting(this):
         return this.socket.isConnecting()
@@ -43,6 +49,74 @@ class BaksysRemoteBackup:
         this.socket.send(backupPacket.listRequest())
         return this._waitForResponse()
         
+    def downloadInterrupt(this):
+        this.socket.send(backupPacket.downloadBreakRequest())
+        
+    def handleDownload(this, message):
+        subtype = message.readByte()
+        if   subtype == backupPacket.UPLOAD_DOWNLOAD_CONTINUE:
+            try:
+                if not this.fileOperation:
+                    this.downloadInterrupt()
+                    return
+                offset = message.readLong()
+                size   = message.readLong()
+                data   = message.readBuffer(size)
+                this.fileOperation['offset'] = offset
+                this.fileOperation['size']  += size
+                this.fileOperation['file'].seek(offset, 0)
+                this.fileOperation['file'].write(data)
+                
+                # event invoke
+                args = BaksysEventArgs()
+                args.progress = this.fileOperation['size'] / this.fileOperation['total_size']
+                this.onDownloadProcess.invoke(args)
+            except Exception as e:
+                this.downloadInterrupt()
+                this.lastOperationError = str(e)
+                this._setResponse(False)
+                
+        elif subtype == backupPacket.UPLOAD_DOWNLOAD_FINISH:
+            if not this.fileOperation:
+                this.downloadInterrupt()
+                return
+            this.fileOperation['file'].close()
+            shutil.move(this.fileOperation['temp'], this.fileOperation['path'])
+            this.fileOperation = {}
+            this._setResponse(True)
+            
+        elif subtype == backupPacket.UPLOAD_DOWNLOAD_BREAK:
+            this.lastOperationError = 'operation has been interrupted by remote server'
+            this._setResponse(False)
+            
+        elif subtype == backupPacket.UPLOAD_DOWNLOAD_START:
+            this.fileOperation['total_size'] = message.readLong()
+            this._setResponse(True)
+            
+    def downloadRequest(this, path):
+        temppath = ''
+        while temppath == '' or os.path.exists(temppath):
+            temppath = os.path.join(BAKSYS_TEMPDIR, 'download_%08X'%int(random()*0x100000000))
+        this.fileOperation = {                                        \
+            'path'       : os.path.join(config['backup_path'], path), \
+            'temp'       : temppath,                                  \
+            'file'       : None,                                      \
+            'offset'     : 0,                                         \
+            'size'       : 0,                                         \
+            'total-size' : 0                                          \
+        }
+        if not os.path.exists(BAKSYS_TEMPDIR):
+            os.makedirs(BAKSYS_TEMPDIR)
+        this.fileOperation['file'] = open(this.fileOperation['temp'], 'wb')
+        this.socket.send(backupPacket.downloadRequest(path))
+        return this._waitForResponse()
+            
+    def downloadBackup(this):
+        if not this.fileOperation:
+            this.lastOperationError = 'not any download request.'
+            return False
+        return this._waitForResponse()
+        
     def uploadBackup(this, backup, path):
         # TODO
         pass
@@ -61,7 +135,7 @@ class BaksysRemoteBackup:
         if this.remoteResponse['error']:
             raise RuntimeError(this.remoteResponse['error'])
         result =  this.remoteResponse['result']
-        this.remoteResponse = None
+        this.remoteResponse = { }
         return result
     
     def _onConnectReset(this, socket):
@@ -88,7 +162,7 @@ class BaksysRemoteBackup:
             
         elif header == packet.RESPONSE_BACKUP:
             subtype = message.readByte()
-            if subtype == packet.backup.REQUEST_TYPE_LIST:
+            if subtype == backupPacket.REQUEST_TYPE_LIST:
                 count = message.readEncodingInt()
                 backupList = []
                 for i in range(count):
@@ -104,13 +178,15 @@ class BaksysRemoteBackup:
                         'crc'         : crc,                    \
                     })
                 this._setResponse(backupList)
+            elif subtype == backupPacket.REQUEST_TYPE_UPDATE_LIST:
+                count = message.readEncodingInt()
+                updateList = []
+                for i in range(count):
+                    updateList.append(message.readString())
+                this._setResponse(updateList)
             
-        elif header == packet.BAKSYS_UPDATE_LIST_RESPONSE:
-            count = message.readEncodingInt()
-            updateList = []
-            for i in range(count):
-                updateList.append(message.readString())
-            this._setResponse(updateList)
+        elif header == packet.RESPONSE_DOWNLOAD:
+            this.handleDownload(message)
             
         else:
             # TODO: process invalid packet
