@@ -1,14 +1,12 @@
 import os
 import shutil
-import tempfile
-import baksys.config as config
 from   baksys.backup      import *
 from   baksys.event       import *
 from   app.client.setting import *
 
 class BaksysLocalBackup:
     def __init__(this):
-        this.backupPath        = config.get('backup_path')
+        this.backupPath        = config['backup_path']
         
         this.onBackupFailed    = BaksysEvent()
         this.onBackupProgress  = BaksysEvent()

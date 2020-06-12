@@ -1,13 +1,12 @@
 import os
 import shutil
-import tempfile
-import baksys.config as config
 from   baksys.backup      import *
 from   baksys.event       import *
+from   app.server.setting import *
 
 class BaksysUserBackup:
     def __init__(this, username):
-        this.backupPath = os.path.join(config.get('backup_path'), username)
+        this.backupPath = os.path.join(config['backup_path'], username)
         if not os.path.exists(this.backupPath):
             os.makedirs(this.backupPath)
         

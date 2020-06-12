@@ -1,10 +1,8 @@
 import os
-import baksys.config as config
-from   baksys.net     import *
+from   baksys.net         import *
 from   app.server.setting import *
 from   app.server.client  import *
-import app.com.packet    as packet
-import app.com.log
+import app.com.packet as packet
 
 class BaksysServerApp:
     def __init__(this):
@@ -47,7 +45,7 @@ class BaksysServerApp:
                 cmd = input('> ')
                 
                 if cmd == 'exit':
-                    config.save(BAKSYS_CONFIG)
+                    saveConfig()
                     this.onExit()
                     print('see you~')
                     break

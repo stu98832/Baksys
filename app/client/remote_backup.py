@@ -1,6 +1,5 @@
 import os
 import threading
-import baksys.config  as config
 from   baksys.net     import *
 import app.com.packet as packet
 

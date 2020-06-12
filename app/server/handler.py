@@ -1,4 +1,3 @@
-import baksys.config  as config
 import app.com.packet as packet
 from   app.server.user_backup import *
 

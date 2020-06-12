@@ -1,5 +1,6 @@
 import os
-import baksys.config as config
+import json
+from   app.com.log import *
 
 BAKSYS_HOME      = os.path.expanduser('~/.baksys')
 BAKSYS_TEMPDIR   = os.path.join(BAKSYS_HOME, 'temp')
@@ -9,12 +10,16 @@ BAKSYS_ERROR_LOG = os.path.join(BAKSYS_LOGS, 'client.error.log')
 BAKSYS_CONFIG    = os.path.join(BAKSYS_HOME, 'client.json')
 BAKSYS_PORT      = 20003
 
-_initialize = False
-if not _initialize:
-    _initialize = True
-    # default config
-    config.set('backup_path', BAKSYS_BACKUP)
-    config.set('logs_path'  , BAKSYS_ERROR_LOG)
-    
+config = { }
+if not config:
+    config['backup_path'] = BAKSYS_BACKUP
     if os.path.exists(BAKSYS_CONFIG): 
-        config.load(BAKSYS_CONFIG)
+        with open(BAKSYS_CONFIG, 'r') as file:
+            config = json.load(file)
+            
+logger = BaksysLogger(BAKSYS_ERROR_LOG)
+
+def saveConfig():
+    with open(BAKSYS_CONFIG, 'w') as file:
+        json.dump(config, file)
+_initialize = False

@@ -1,11 +1,10 @@
 import os
 import logging
 import traceback
-import baksys.config as config
 
 class BaksysLogger:
-    def __init__(this):
-        this.logPath = config.get('logs_path')
+    def __init__(this, path):
+        this.logPath = path
         dirname = os.path.dirname(this.logPath)
         if not os.path.exists(dirname): 
             os.makedirs(dirname)
@@ -30,14 +29,3 @@ class BaksysLogger:
             this.logger.error('%s. reason : [%s] %s \n%s' % (message, ename, error, trace))
         else:
             this.logger.error('%s.' % (message))
-
-_instance = None
-
-def _getInitialize():
-    global _instance
-    if _instance == None:
-        _instance = BaksysLogger()
-    return _instance
-        
-def error(message, error = None):
-    _getInitialize().error(message, error)

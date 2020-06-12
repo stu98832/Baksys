@@ -1,5 +1,4 @@
 import os
-import baksys.config as config
 from   baksys.utils             import *
 from   baksys.backup            import *
 from   baksys.event             import *
@@ -7,7 +6,6 @@ from   app.client.setting       import *
 from   app.client.local_backup  import *
 from   app.client.remote_backup import *
 import app.com.console as console
-import app.com.log
     
 class BaksysClientApp:
     def __init__(this):
@@ -28,14 +26,14 @@ class BaksysClientApp:
         
     def onRestoreError(this, e):
         print('\nerror when restore :', e.message, e.error)
-        app.com.log.error(e.message, e.error)
+        logger.error(e.message, e.error)
     
     def onBackupProgress(this, e):
         console.progressBar('%3d%%'%int(e.progress*100), e.progress)
         
     def onBackupError(this, e):
         print('\nerror when backup :', e.message, e.error)
-        app.com.log.error(e.message, e.error)
+        logger.error(e.message, e.error)
        
     def _loadCommands(this):
         this.commands['exit'] = { 'desc':'exit this program' }
@@ -63,7 +61,7 @@ class BaksysClientApp:
     def showBackupList(this, backupList):
         buffersize = os.get_terminal_size()
         fmt        = '%%-%ds %%-%ds %%%ds %%%ds' % (buffersize.columns-52, 25, 8, 15)
-        backupPath = config.get('backup_path')
+        backupPath = config['backup_path']
         
         print(fmt % ('backup', 'original path', 'CRC', 'size'))
         print('-'*(buffersize.columns-1))
@@ -106,14 +104,14 @@ class BaksysClientApp:
             print('remote-list : \n')
             this.showBackupList(backupList)
         except Exception as e:
-            app.com.log.error('error on remote-list :', e)
+            logger.error('error on remote-list :', e)
             print('error on remote-list :', e)
         
     def cmdRemoteUpload(this):
         try:
             if not this.checkRemoteConnection(): return
         except Exception as e:
-            app.com.log.error('error on remote-upload :', e)
+            logger.error('error on remote-upload :', e)
             print('error on remote-upload :', e)
         
     def cmdRemoteDelete(this):
@@ -125,7 +123,7 @@ class BaksysClientApp:
             if result:
                 print('delete finish.')
         except Exception as e:
-            app.com.log.error('error on remote-delete :', e)
+            logger.error('error on remote-delete :', e)
             print('error on remote-delete :', e)
             
     def cmdRemoteUpdate(this):
@@ -139,7 +137,7 @@ class BaksysClientApp:
             print('start update remote backup files...')
             this.remoteBackup.updateRemote(updateList)
         except Exception as e:
-            app.com.log.error('error on remote-update :', e)
+            logger.error('error on remote-update :', e)
             print('error on remote-update :', e)
     # end cmdUpdate
     
@@ -156,7 +154,7 @@ class BaksysClientApp:
         name     = input('name of backup: ')
         override = False
         
-        backupPath = config.get('backup_path')
+        backupPath = config['backup_path']
         if os.path.exists(os.path.join(backupPath, name)):
             override = console.askYesNo('backup \'%s\' has existed, are you want to override?' % name)
             if not override:
@@ -207,7 +205,7 @@ class BaksysClientApp:
                 cmd = input('> ')
                 
                 if cmd == 'exit':
-                    config.save(BAKSYS_CONFIG)
+                    saveConfig()
                     print('see you~')
                     break
                 elif cmd in this.commands:
