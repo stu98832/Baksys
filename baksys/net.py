@@ -75,13 +75,14 @@ class BaksysClientSocket:
                     data = this._socket.recv(BaksysClientSocket.CHUNK_SIZE)
                     if not data: break
                     rawData.extend(data)
-                    if len(rawData) < 4: continue
-                    packetSize = int.from_bytes(bytes(rawData[:4]), byteorder='little', signed = False)
-                    if len(rawData) < (packetSize+4): continue
-                    ms = BaksysMemoryStream(rawData[4:4+packetSize])
-                    br = BaksysBinaryReader(ms)
-                    rawData = rawData[4+packetSize:]
-                    this.onReceive(this, br)
+                    while True:
+                        if len(rawData) < 4: break
+                        packetSize = int.from_bytes(bytes(rawData[:4]), byteorder='little', signed = False)
+                        if len(rawData) < (packetSize+4): break
+                        ms = BaksysMemoryStream(rawData[4:4+packetSize])
+                        br = BaksysBinaryReader(ms)
+                        rawData = rawData[4+packetSize:]
+                        this.onReceive(this, br)
                 except BlockingIOError:
                     continue
                 except ConnectionResetError:
