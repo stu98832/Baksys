@@ -142,7 +142,8 @@ class BaksysClientApp:
     # end cmdUpdate
     
     def cmdDelete(this):
-        name      = input('name of backup: ')
+        name = input('name of backup: ')
+        this.localBackup.deleteBackup(name)
         print('backup \'%s\' was deleted' % name)
         
     def cmdBackupList(this):

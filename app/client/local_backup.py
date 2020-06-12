@@ -20,7 +20,7 @@ class BaksysLocalBackup:
         if '..' in path:
             raise RuntimeError('unsafe path \'%s\' denied!' % path)
         
-    def deleteBackup(path):
+    def deleteBackup(this, path):
         this._checkPathValid(path)
         fullpath  = os.path.join(this.backupPath, path)
         
@@ -29,7 +29,7 @@ class BaksysLocalBackup:
             
         os.remove(fullpath)
         
-    def getBackup(path):
+    def getBackup(this, path):
         this._checkPathValid(path)
         backupFile = os.path.join(this.backupPath, path)
         
