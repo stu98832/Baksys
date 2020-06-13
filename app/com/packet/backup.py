@@ -17,7 +17,7 @@ def listResponse(backupList):
     writer = BaksysBinaryWriter(packet)
     writer.writeByte(RESPONSE_BACKUP)
     writer.writeByte(REQUEST_TYPE_LIST)
-    writer.writeEncodingInt(len(backupList))
+    writer.writeInt(len(backupList))
     for item in backupList:
         writer.writeString(item['path'])
         writer.writeString(item['origin_path'])
@@ -38,7 +38,7 @@ def updateListRequest(backupList):
     writer = BaksysBinaryWriter(packet)
     writer.writeByte(REQUEST_BACKUP)
     writer.writeByte(REQUEST_TYPE_UPDATE_LIST)
-    writer.writeEncodingInt(len(backupList))
+    writer.writeInt(len(backupList))
     for item in backupList:
         writer.writeString(item['path'])
         writer.writeUInt(item['crc'])
@@ -49,7 +49,7 @@ def updateListResponse(updateList):
     writer = BaksysBinaryWriter(packet)
     writer.writeByte(RESPONSE_BACKUP)
     writer.writeByte(REQUEST_TYPE_UPDATE_LIST)
-    writer.writeEncodingInt(len(updateList))
+    writer.writeInt(len(updateList))
     for item in updateList:
         writer.writeString(item['path'])
     return packet.getBuffer()

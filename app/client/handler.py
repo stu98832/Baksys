@@ -8,7 +8,7 @@ import app.com.packet.backup
 def handleBackup(remoteBackup, message):
     subtype = message.readByte()
     if subtype == packet.backup.REQUEST_TYPE_LIST:
-        count = message.readEncodingInt()
+        count = message.readInt()
         backupList = []
         for i in range(count):
             path    = message.readString()
@@ -25,7 +25,7 @@ def handleBackup(remoteBackup, message):
         remoteBackup.setResponse(backupList)
     # end REQUEST_TYPE_LIST
     elif subtype == packet.backup.REQUEST_TYPE_UPDATE_LIST:
-        count = message.readEncodingInt()
+        count = message.readInt()
         updateList = []
         for i in range(count):
             updateList.append(message.readString())
