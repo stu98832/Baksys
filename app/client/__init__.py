@@ -12,15 +12,7 @@ class BaksysClientApp:
         this.commands = { }
         this._loadCommands()
         this.localBackup = BaksysLocalBackup()
-        this.localBackup.onRestoreFailed   += this.onRestoreError
-        this.localBackup.onRestoreProgress += this.onRestoreProgress
-        this.localBackup.onRestoreFinished += lambda e: print('\n'+e.message)
-        this.localBackup.onBackupFailed    += this.onBackupError
-        this.localBackup.onBackupProgress  += this.onBackupProgress
-        this.localBackup.onBackupFinished  += lambda e: print('\n'+e.message)
         this.remoteBackup = BaksysRemoteBackup()
-        this.remoteBackup.onDownloadProcess += this.onDownloadProcess
-        this.remoteBackup.onUploadProcess += this.onUploadProcess
     
     # events
     def onUploadProcess(this, e):
@@ -308,6 +300,18 @@ class BaksysClientApp:
 
     # baksys command line
     def run(this):
+        # append backup event
+        this.localBackup.onRestoreFailed    += this.onRestoreError
+        this.localBackup.onRestoreProgress  += this.onRestoreProgress
+        this.localBackup.onRestoreFinished  += lambda e: print('\n'+e.message)
+        this.localBackup.onBackupFailed     += this.onBackupError
+        this.localBackup.onBackupProgress   += this.onBackupProgress
+        this.localBackup.onBackupFinished   += lambda e: print('\n'+e.message)
+        
+        # append remote event
+        this.remoteBackup.onDownloadProcess += this.onDownloadProcess
+        this.remoteBackup.onUploadProcess   += this.onUploadProcess
+        
         print('\'help\' to show help message')
         while True:
             try:
