@@ -74,7 +74,6 @@ class BaksysClientSocket:
         try:
             rawData = []
             while this._connecting:
-                time.sleep(0.1)
                 try:
                     data = this._socket.recv(BaksysClientSocket.CHUNK_SIZE)
                     if not data: break
@@ -88,6 +87,7 @@ class BaksysClientSocket:
                         rawData = rawData[4+packetSize:]
                         this.onReceive(this, br)
                 except BlockingIOError:
+                    time.sleep(0.1)
                     continue
                 except ConnectionResetError:
                     break
@@ -146,12 +146,12 @@ class BaksysServerSocket:
     def _accept(this):
         try:
             while this._listening:
-                time.sleep(0.1)
                 try:
                     sock, addr = this._socket.accept()
                     client = BaksysClientSocket(sock, addr)
                     this.onAccept(this, client)
                 except BlockingIOError:
+                    time.sleep(0.1)
                     continue
         finally:    
             this.onClose(this)
