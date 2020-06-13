@@ -44,7 +44,8 @@ class BaksysClientSocket:
         
     def send(this, data):
         if not this._connecting or not this._socket:
-            raise RuntimeError('no connection')
+            # raise RuntimeError('no connection')
+            return
             
         packet = []
         packetSize = len(data)
@@ -56,6 +57,9 @@ class BaksysClientSocket:
             try:
                 partOfPacket = packet[sendedSize:]
                 sendedSize += this._socket.send(bytes(partOfPacket))
+            except ConnectionResetError:
+                this.disconnect()
+                break
             except BlockingIOError:
                 continue
         
