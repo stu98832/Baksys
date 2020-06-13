@@ -33,7 +33,7 @@ class BaksysUserBackup:
                     offset = 0
                     file.seek(0, 0)
                     client.socket.send(backupPacket.downloadStartResponse(size))
-                    while size > 0:
+                    while size > 0 and client.socket.isConnecting():
                         if this.downloadInterrupted:
                             client.socket.send(backupPacket.downloadBreakResponse())
                             return

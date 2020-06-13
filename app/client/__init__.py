@@ -63,6 +63,7 @@ class BaksysClientApp:
             'func':this.cmdRemoteDownload }
         # this.commands['remote-update'] = { 'desc':'update remote backups', \
         #     'func':this.cmdRemoteUpdate }
+    # end _loadCommands
         
     def showBackupList(this, backupList):
         buffersize = os.get_terminal_size()
@@ -79,6 +80,7 @@ class BaksysClientApp:
                     break
             print(fmt % (item['path'], item['origin_path'], '%08X' % item['crc'], sizestr))
         print()
+    # end showBackupList
             
     def checkRemoteConnection(this):
         try:
@@ -101,16 +103,23 @@ class BaksysClientApp:
         except KeyboardInterrupt:
             this.remoteBackup.disconnect()
             print('^C')
+    # end checkRemoteConnection
             
     def cmdRemoteDownload(this):
         try:
             if not this.checkRemoteConnection(): return
             path = input('remote backup : ')
+            
+            if this.localBackup.hasBackup(path):
+                override = console.askYesNo('are you want to override original backup \'%s\'?' % path)
+                if not override:
+                    print('download calceled')
+                    return
+                    
             result = this.remoteBackup.downloadRequest(path)
             if not result:
-                print('download failed :', this.remoteBackup.lastOperationError)
+                print('download request failed :', this.remoteBackup.lastOperationError)
                 return
-            print('start download....')
             result = this.remoteBackup.downloadBackup()
             print()
             if not result:
@@ -120,6 +129,11 @@ class BaksysClientApp:
         except KeyboardInterrupt:
             this.remoteBackup.downloadInterrupt()
             print('\noperation of download has been interrupted.')
+        except Exception as e:
+            this.remoteBackup.downloadInterrupt()
+            logger.error('error on remote-list :', e)
+            print('\nerror on remote-list :', e)
+    # end cmdRemoteDownload
         
     def cmdRemoteList(this):
         try:
@@ -131,6 +145,7 @@ class BaksysClientApp:
         except Exception as e:
             logger.error('error on remote-list :', e)
             print('error on remote-list :', e)
+    # end cmdRemoteList
         
     def cmdRemoteUpload(this):
         try:
@@ -138,6 +153,7 @@ class BaksysClientApp:
         except Exception as e:
             logger.error('error on remote-upload :', e)
             print('error on remote-upload :', e)
+    # end cmdRemoteUpload
         
     def cmdRemoteDelete(this):
         if not this.checkRemoteConnection():
@@ -149,6 +165,7 @@ class BaksysClientApp:
         else:
             logger.error('error on remote-delete :', this.remoteBackup.lastOperationError)
             print('error on remote-delete :', this.remoteBackup.lastOperationError)
+    # end cmdRemoteDelete
             
     def cmdRemoteUpdate(this):
         try:
@@ -172,10 +189,12 @@ class BaksysClientApp:
             print('backup \'%s\' was deleted' % name)
         except Exception as e:
             print('error on delete backup :', e)
+    # end cmdDelete
         
     def cmdBackupList(this):
         print('backup-list : \n')
         this.showBackupList(this.localBackup.getList())
+    # end cmdBackupList
         
     def cmdBackup(this):
         path     = input('path you want to backup: ')
@@ -191,6 +210,7 @@ class BaksysClientApp:
                 
         print('start backup')
         this.localBackup.backup(name, path, override=override)
+    # end cmdBackup
         
     def cmdRestore(this):
         name = input('name of backup: ')
@@ -218,7 +238,9 @@ class BaksysClientApp:
         
         print('start restore')
         this.localBackup.restore(backup, path, override = override)
-        
+    # end cmdRestore
+    
+    # show command help
     def cmdHelp(this):
         maxlen = 0
         for cmd in this.commands:
@@ -227,6 +249,7 @@ class BaksysClientApp:
         fmt = '%%-%ds : %%s' % (maxlen)
         for cmd in this.commands:
             print(fmt % (cmd, this.commands[cmd]['desc']))
+    # end cmdHelp
 
     # baksys command line
     def run(this):
@@ -245,4 +268,5 @@ class BaksysClientApp:
                     print('can\'t find command \'%s\'' % cmd)
             except KeyboardInterrupt:
                 print('^C')
+    # end run
 # end BaksysClientApp
