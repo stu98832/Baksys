@@ -20,4 +20,4 @@ logger = BaksysLogger(BAKSYS_ERROR_LOG)
 
 def saveConfig():
     with open(BAKSYS_CONFIG, 'w') as file:
-        json.dump(config, file)
+        json.dump(config, file, indent=4)
