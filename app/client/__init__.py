@@ -131,8 +131,8 @@ class BaksysClientApp:
             print('\noperation of download has been interrupted.')
         except Exception as e:
             this.remoteBackup.downloadInterrupt()
-            logger.error('error on remote-list :', e)
-            print('\nerror on remote-list :', e)
+            logger.error('error on remote-download :', e)
+            print('\nerror on remote-download :', e)
     # end cmdRemoteDownload
         
     def cmdRemoteList(this):
