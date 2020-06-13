@@ -254,6 +254,9 @@ class BaksysBinaryWriter:
         val  = value;
         code = lambda x: (0x80 if (val > 0x7F) else 0x00) | (x&0x7F)
         buf  = []
+            
+        if val == 0:
+            buf.append(0)
         
         while val > 0:
             buf.append(code(val))
