@@ -30,6 +30,12 @@ class BaksysLocalBackup:
             
         os.remove(fullpath)
         
+    def hasBackup(this, path):
+        this._checkPathValid(path)
+        backupFile = os.path.join(this.backupPath, path)
+        
+        return os.path.exists(backupFile)
+        
     def getBackup(this, path):
         this._checkPathValid(path)
         backupFile = os.path.join(this.backupPath, path)
