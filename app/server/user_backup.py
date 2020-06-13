@@ -88,6 +88,12 @@ class BaksysUserBackup:
         this.uploadThread = threading.Thread(target=upload)
         this.uploadThread.start()
         
+    def hasBackup(this, path):
+        this._checkPathValid(path)
+        backupFile = os.path.join(this.backupPath, path)
+        
+        return os.path.exists(backupFile)
+        
     def getBackup(this, path):
         this._checkPathValid(path)
         backupFile = os.path.join(this.backupPath, path)
@@ -126,10 +132,10 @@ class BaksysUserBackup:
                 else:
                     backup = BaksysBackup()
                     backup.load(itemname)
-                    result.append({\
+                    result.append({ \
                         'name'        : backup.sName, \
                         'path'        : itempath,     \
-                        'origin_path' : backup.sPath, \
+                        'origin_path' : os.path.join(backup.sPath, backup.pData.sName), \
                         'size'        : backup.nSize, \
                         'crc'         : backup.nCRC   \
                     })

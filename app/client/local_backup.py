@@ -244,10 +244,10 @@ class BaksysLocalBackup:
                 else:
                     backup = BaksysBackup()
                     backup.load(itemname)
-                    result.append({\
+                    result.append({ \
                         'name'        : backup.sName, \
                         'path'        : itempath,     \
-                        'origin_path' : backup.sPath, \
+                        'origin_path' : os.path.join(backup.sPath, backup.pData.sName), \
                         'size'        : backup.nSize, \
                         'crc'         : backup.nCRC   \
                     })
