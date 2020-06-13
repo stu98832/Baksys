@@ -65,13 +65,13 @@ class BaksysClientApp:
             'func':this.cmdRemoteDelete }
         this.commands['remote-download'] = { 'desc':'update remote backups', \
             'func':this.cmdRemoteDownload }
-        # this.commands['remote-update'] = { 'desc':'update remote backups', \
-        #     'func':this.cmdRemoteUpdate }
+        this.commands['remote-update'] = { 'desc':'update remote backups', \
+            'func':this.cmdRemoteUpdate }
     # end _loadCommands
         
     def showBackupList(this, backupList):
         buffersize = os.get_terminal_size()
-        fmt        = '%%-%ds %%-%ds %%%ds %%%ds' % (buffersize.columns-52, 25, 8, 15)
+        fmt        = '%%-%ds %%-%ds %%%ds %%%ds' % (buffersize.columns-52, 30, 8, 10)
         backupPath = config['backup_path']
         
         print(fmt % ('backup', 'original path', 'CRC', 'size'))
@@ -80,7 +80,7 @@ class BaksysClientApp:
             size_display = {'G':0x40000000, 'M':0x100000, 'K':0x400, '':0}
             for tag in size_display:
                 if item['size'] > size_display[tag]:
-                    sizestr = '%d %sBytes' % (int(item['size']/size_display[tag]*100)/100, tag)
+                    sizestr = '%d %sB' % (int(item['size']/size_display[tag]*100)/100, tag)
                     break
             print(fmt % (item['path'], item['origin_path'], '%08X' % item['crc'], sizestr))
         print()
@@ -127,9 +127,9 @@ class BaksysClientApp:
             result = this.remoteBackup.getDownloadResult()
             print()
             if not result:
-                print('download failed :', this.remoteBackup.lastOperationError)
+                print('\ndownload failed :', this.remoteBackup.lastOperationError)
                 return
-            print('download finished')
+            print('\ndownload finished')
         except KeyboardInterrupt:
             this.remoteBackup.downloadInterrupt()
             print('\noperation of download has been interrupted.')
@@ -167,42 +167,74 @@ class BaksysClientApp:
             result = this.remoteBackup.getUploadResult()
             print()
             if not result:
-                print('upload failed :', this.remoteBackup.lastOperationError)
+                print('\nupload failed :', this.remoteBackup.lastOperationError)
                 return
-            print('upload finished')
+            print('\nupload finished')
         except KeyboardInterrupt:
             this.remoteBackup.uploadInterrupt()
             print('\noperation of upload has been interrupted.')
+        except RuntimeError as e:
+            print('\nerror on remote-upload :', e)
         except Exception as e:
-            logger.error('error on remote-upload :', e)
-            print('error on remote-upload :', e)
+            logger.error('error on remote-upload', e)
+            print('\nerror on remote-upload :', e)
     # end cmdRemoteUpload
         
     def cmdRemoteDelete(this):
-        if not this.checkRemoteConnection():
-            return
-        path = input('remote backup : ')
-        result = this.remoteBackup.deleteBackup(path)
-        if result:
-            print('delete finish.')
-        else:
-            logger.error('error on remote-delete :', this.remoteBackup.lastOperationError)
-            print('error on remote-delete :', this.remoteBackup.lastOperationError)
+        try:
+            if not this.checkRemoteConnection():
+                return
+            path = input('remote backup : ')
+            result = this.remoteBackup.deleteBackup(path)
+            if result:
+                print('delete finish.')
+            else:
+                logger.error('error on remote-delete', this.remoteBackup.lastOperationError)
+                print('error on remote-delete :', this.remoteBackup.lastOperationError)
+        except KeyboardInterrupt:
+            print('(KeyboardInterrupt)')
+        except RuntimeError as e:
+            print('error on remote-delete :', e)
+        except Exception as e:
+            logger.error('error on remote-delete', e)
+            print('error on remote-delete :', e)
     # end cmdRemoteDelete
             
     def cmdRemoteUpdate(this):
+        finishedCount = 0
+        totalCount    = 0
         try:
             if not this.checkRemoteConnection(): return
             print('get update list...')
-            updateList     = this.remoteBackup.getUpdateList(this.localBackup.getList())
-            totalCount     = len(updateList)
-            completedCount = 0
+            updateList    = this.remoteBackup.getUpdateList(this.localBackup.getList())
+            totalCount    = len(updateList)
             print('%d backup need to update.' % totalCount)
-            print('start update remote backup files...')
-            this.remoteBackup.updateRemote(updateList)
-        except Exception as e:
-            logger.error('error on remote-update :', e)
+            if totalCount > 0:
+                print('start update remote backup files...')
+            for itemPath in updateList:
+                print('(%d/%d)start upload \'%s\'' % (finishedCount+1, totalCount, itemPath))
+                result = this.remoteBackup.startUpload(itemPath)
+                if not result:
+                    print('(%d/%d)upload \'%s\' failed :' % (finishedCount+1, totalCount, itemPath), this.remoteBackup.lastOperationError)
+                    return
+                result = this.remoteBackup.getUploadResult()
+                print()
+                if not result:
+                    print('\n(%d/%d)upload \'%s\' failed :' % (finishedCount+1, totalCount, itemPath), this.remoteBackup.lastOperationError)
+                    return
+                finishedCount += 1
+                print('\n(%d/%d)upload \'%s\' finished' % (finishedCount, totalCount, itemPath))
+        except KeyboardInterrupt:
+            this.remoteBackup.uploadInterrupt()
+            print('\noperation of update has been interrupted.')
+        except RuntimeError as e:
             print('error on remote-update :', e)
+        except Exception as e:
+            logger.error('error on remote-update', e)
+            print('error on remote-update :', e)
+        finally:
+            if totalCount > 0:
+                print('%d item uploaded' % finishedCount)
     # end cmdUpdate
     
     def cmdDelete(this):

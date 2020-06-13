@@ -23,6 +23,7 @@ def handleBackupRequest(client, message):
     if   subtype == packet.backup.REQUEST_TYPE_LIST:
         backupList = client.backup.getList()
         client.socket.send(packet.backup.listResponse(backupList))
+    # end REQUEST_TYPE_LIST
     elif subtype == packet.backup.REQUEST_TYPE_DELETE:
         deletePath = message.readString()
         try:
@@ -33,6 +34,29 @@ def handleBackupRequest(client, message):
         except Exception as e:
             logger.error('error on delete backup', e)
             client.socket.send(packet.operationResponse(False, 'internal error'))
+    # end REQUEST_TYPE_DELETE
+    elif subtype == packet.backup.REQUEST_TYPE_UPDATE_LIST:
+        count = message.readInt()
+        remoteList = []
+        updateList = []
+        backupList = client.backup.getList()
+        
+        for i in range(count):
+            path = message.readString()
+            crc  = message.readUInt()
+            remoteList.append({'path':path, 'crc':crc})
+            
+        for remoteItem in remoteList:
+            sameBackup = False
+            for backupItem in backupList:
+                if  backupItem['path'] == remoteItem['path'] and \
+                    backupItem['crc']  == remoteItem['crc']:
+                    sameBackup = True
+                    break
+            if not sameBackup:
+                updateList.append(remoteItem)
+        client.socket.send(packet.backup.updateListResponse(updateList))
+    # end REQUEST_TYPE_UPDATE_LIST
 # end handleBackupRequest
             
 def handleDownloadRequest(client, message):
