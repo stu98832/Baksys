@@ -4,7 +4,7 @@ import threading
 from baksys.io import *
 
 class BaksysClientSocket:
-    CHUNK_SIZE = 4096
+    CHUNK_SIZE = 65535
 
     def __init__(this, socket = None, address=('0.0.0.0', 0)):
         this._socket      = socket

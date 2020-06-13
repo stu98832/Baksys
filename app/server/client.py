@@ -35,6 +35,10 @@ class BaksysUser:
             if this._checkLogin():
                 handler.handleBackupRequest(this, message)
                 
+        elif header == packet.REQUEST_UPLOAD:
+            if this._checkLogin():
+                handler.handleUploadRequest(this, message)
+                
         elif header == packet.REQUEST_DOWNLOAD:
             if this._checkLogin():
                 handler.handleDownloadRequest(this, message)

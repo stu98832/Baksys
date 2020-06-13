@@ -2,14 +2,19 @@ import os
 import shutil
 import threading
 import time
+from   random                import random
 from   baksys.backup         import *
 from   baksys.event          import *
 from   app.server.setting    import *
-import app.com.packet.backup as backupPacket
+import app.com.packet        as packet
+import app.com.packet.backup
 
 class BaksysUserBackup:
+    UPLOAD_CHUNK_SIZE = 65535
+
     def __init__(this, username):
-        this.backupPath = os.path.join(config['backup_path'], username)
+        this.backupPath   = os.path.join(config['backup_path'], username)
+        this.acceptUploadFile = { }
         this.uploadThread = None
         if not os.path.exists(this.backupPath):
             os.makedirs(this.backupPath)
@@ -17,6 +22,38 @@ class BaksysUserBackup:
     def _checkPathValid(this, path):
         if '..' in path:
             raise RuntimeError('unsafe path \'%s\' denied!' % path)
+            
+    def acceptUploadInterrutpt(this):
+        if this.acceptUploadFile and this.acceptUploadFile['file']:
+            this.acceptUploadFile['file'].close()
+            os.remove(this.acceptUploadFile['temp'])
+        this.acceptUploadFile = { }
+            
+    def acceptUploadData(this, offset, data):
+        if this.acceptUploadFile and this.acceptUploadFile['file']:
+            this.acceptUploadFile['file'].seek(offset, 0)
+            this.acceptUploadFile['file'].write(data)
+            
+    def acceptUploadFinish(this):
+        if this.acceptUploadFile and this.acceptUploadFile['file']:
+            this.acceptUploadFile['file'].close()
+            shutil.move(this.acceptUploadFile['temp'], this.acceptUploadFile['path'])
+        this.acceptUploadFile = { }
+            
+    def acceptUpload(this, path):
+        this._checkPathValid(path)
+        temppath = ''
+        while temppath == '' or os.path.exists(temppath):
+            temppath = os.path.join(BAKSYS_TEMPDIR, 'upload_%08X'%int(random()*0x100000000))
+        this.acceptUploadFile = {                               \
+            'path'       : os.path.join(this.backupPath, path), \
+            'temp'       : temppath,                            \
+            'file'       : None,                                \
+            'offset'     : 0,                                   \
+            'size'       : 0,                                   \
+            'total-size' : 0,                                   \
+        }
+        this.acceptUploadFile['file'] = open(this.acceptUploadFile['temp'], 'wb')
             
     def startUpload(this, client, path):
         this._checkPathValid(path)
@@ -32,21 +69,22 @@ class BaksysUserBackup:
                     size   = file.tell() - begin
                     offset = 0
                     file.seek(0, 0)
-                    client.socket.send(backupPacket.downloadStartResponse(size))
+                    client.socket.send(packet.backup.downloadStartResponse(size))
                     while size > 0 and client.socket.isConnecting():
-                        if this.downloadInterrupted:
-                            client.socket.send(backupPacket.downloadBreakResponse())
+                        if this.uploadInterrupted:
+                            client.socket.send(packet.backup.downloadBreakResponse())
                             return
-                        sizeToWrite = min(8192, size)
+                        sizeToWrite = min(this.UPLOAD_CHUNK_SIZE, size)
                         data        = file.read(sizeToWrite)
-                        client.socket.send(backupPacket.downloadDataResponse(offset, data))
+                        client.socket.send(packet.backup.downloadDataResponse(offset, data))
                         offset += sizeToWrite
                         size   -= sizeToWrite
-                client.socket.send(backupPacket.downloadFinishResponse())
+                client.socket.send(packet.backup.downloadFinishResponse())
             except Exception as e:
-                client.socket.send(backupPacket.downloadBreakResponse())
+                logger.error('error during upload file', e)
+                client.socket.send(packet.backup.downloadBreakResponse())
         
-        this.downloadInterrupted = False
+        this.uploadInterrupted = False
         this.uploadThread = threading.Thread(target=upload)
         this.uploadThread.start()
         

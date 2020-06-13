@@ -3,6 +3,7 @@ import json
 from   app.com.log import *
 
 BAKSYS_HOME      = os.path.expanduser('~/.baksys')
+BAKSYS_TEMPDIR   = os.path.join(BAKSYS_HOME, 'temp')
 BAKSYS_REMOTE    = os.path.join(BAKSYS_HOME, 'remote')
 BAKSYS_LOGS      = os.path.join(BAKSYS_HOME, 'logs')
 BAKSYS_ERROR_LOG = os.path.join(BAKSYS_LOGS, 'server.error.log')

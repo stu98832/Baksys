@@ -20,8 +20,12 @@ class BaksysClientApp:
         this.localBackup.onBackupFinished  += lambda e: print('\n'+e.message)
         this.remoteBackup = BaksysRemoteBackup()
         this.remoteBackup.onDownloadProcess += this.onDownloadProcess
+        this.remoteBackup.onUploadProcess += this.onUploadProcess
     
     # events
+    def onUploadProcess(this, e):
+        console.progressBar('%3d%%'%int(e.progress*100), e.progress)
+        
     def onDownloadProcess(this, e):
         console.progressBar('%3d%%'%int(e.progress*100), e.progress)
         
@@ -55,8 +59,8 @@ class BaksysClientApp:
         #     'func':this.cmdSync }
         this.commands['remote-list'] = { 'desc':'update remote backups', \
             'func':this.cmdRemoteList }
-        # this.commands['remote-upload'] = { 'desc':'update remote backups', \
-        #     'func':this.cmdRemoteUpload }
+        this.commands['remote-upload'] = { 'desc':'update remote backups', \
+            'func':this.cmdRemoteUpload }
         this.commands['remote-delete'] = { 'desc':'update remote backups', \
             'func':this.cmdRemoteDelete }
         this.commands['remote-download'] = { 'desc':'update remote backups', \
@@ -116,11 +120,11 @@ class BaksysClientApp:
                     print('download calceled')
                     return
                     
-            result = this.remoteBackup.downloadRequest(path)
+            result = this.remoteBackup.startDownload(path)
             if not result:
-                print('download request failed :', this.remoteBackup.lastOperationError)
+                print('download failed :', this.remoteBackup.lastOperationError)
                 return
-            result = this.remoteBackup.downloadBackup()
+            result = this.remoteBackup.getDownloadResult()
             print()
             if not result:
                 print('download failed :', this.remoteBackup.lastOperationError)
@@ -150,6 +154,25 @@ class BaksysClientApp:
     def cmdRemoteUpload(this):
         try:
             if not this.checkRemoteConnection(): return
+            path = input('remote backup : ')
+            
+            if not this.localBackup.hasBackup(path):
+                print('can\'t find backup %s' % path)
+                return
+            result = this.remoteBackup.startUpload(path)
+            if not result:
+                print('upload failed :', this.remoteBackup.lastOperationError)
+                return
+            print('start upload...')
+            result = this.remoteBackup.getUploadResult()
+            print()
+            if not result:
+                print('upload failed :', this.remoteBackup.lastOperationError)
+                return
+            print('upload finished')
+        except KeyboardInterrupt:
+            this.remoteBackup.uploadInterrupt()
+            print('\noperation of upload has been interrupted.')
         except Exception as e:
             logger.error('error on remote-upload :', e)
             print('error on remote-upload :', e)

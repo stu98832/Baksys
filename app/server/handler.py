@@ -1,6 +1,7 @@
 import threading
 import app.com.packet        as packet
 import app.com.packet.backup
+from   app.server.setting     import *
 from   app.server.user_backup import *
 
 BAKSYS_ROOT_USERNAME = 'root'
@@ -27,18 +28,68 @@ def handleBackupRequest(client, message):
         try:
             client.backup.deleteBackup(deletePath)
             client.socket.send(packet.operationResponse(True))
-        except Exception as e:
+        except RuntimeError as e:
             client.socket.send(packet.operationResponse(False, str(e)))
+        except Exception as e:
+            logger.error('error on delete backup', e)
+            client.socket.send(packet.operationResponse(False, 'internal error'))
 # end handleBackupRequest
             
 def handleDownloadRequest(client, message):
     subtype = message.readByte()
-    if subtype == packet.backup.UPLOAD_DOWNLOAD_START:
+    if   subtype == packet.backup.UPLOAD_DOWNLOAD_START:
         downloadPath = message.readString()
         try:
             client.backup.startUpload(client, downloadPath)
-        except Exception as e:
+        except RuntimeError as e:
             client.socket.send(packet.operationResponse(False, str(e)))
-    if subtype == packet.backup.UPLOAD_DOWNLOAD_BREAK:
+        except Exception as e:
+            logger.error('error on delete backup', e)
+            client.socket.send(packet.operationResponse(False, 'internal error'))
+    # end UPLOAD_DOWNLOAD_START
+    elif subtype == packet.backup.UPLOAD_DOWNLOAD_BREAK:
+        client.backup.uploadInterrupted = True
+    # end UPLOAD_DOWNLOAD_BREAK
 # end handleDownloadRequest
     
+
+def handleUploadRequest(client, message):
+    subtype = message.readByte()
+    if subtype == packet.backup.UPLOAD_DOWNLOAD_START:
+        downloadPath = message.readString()
+        try:
+            client.backup.acceptUpload(downloadPath)
+            client.socket.send(packet.operationResponse(True))
+        except RuntimeError as e:
+            client.socket.send(packet.operationResponse(False, str(e)))
+        except Exception as e:
+            logger.error('error on start accept upload', e)
+            client.socket.send(packet.operationResponse(False, str(e)))
+    # end UPLOAD_DOWNLOAD_START
+    elif subtype == packet.backup.UPLOAD_DOWNLOAD_BREAK:
+        client.backup.acceptUploadInterrutpt()
+    # end UPLOAD_DOWNLOAD_BREAK
+    elif subtype == packet.backup.UPLOAD_DOWNLOAD_CONTINUE:
+        offset = message.readLong()
+        size   = message.readLong()
+        data   = message.readBuffer(size)
+        try:
+            client.backup.acceptUploadData(offset, data)
+        except RuntimeError as e:
+            client.backup.acceptUploadInterrutpt()
+        except Exception as e:
+            logger.error('error on start accept upload data', e)
+            client.backup.acceptUploadInterrutpt()
+            
+    # end UPLOAD_DOWNLOAD_CONTINUE
+    elif subtype == packet.backup.UPLOAD_DOWNLOAD_FINISH:
+        try:
+            client.backup.acceptUploadFinish()
+            client.socket.send(packet.operationResponse(True))
+        except RuntimeError as e:
+            client.socket.send(packet.operationResponse(False, str(e)))
+        except Exception as e:
+            logger.error('error on start finish upload accept', e)
+            client.socket.send(packet.operationResponse(False, str(e)))
+    # end UPLOAD_DOWNLOAD_FINISH
+# end handleUploadRequest

@@ -59,6 +59,60 @@ UPLOAD_DOWNLOAD_CONTINUE = 0x02
 UPLOAD_DOWNLOAD_FINISH   = 0x03
 UPLOAD_DOWNLOAD_BREAK    = 0x04
 
+def uploadStartRequest(localPath):
+    packet = BaksysMemoryStream()
+    writer = BaksysBinaryWriter(packet)
+    writer.writeByte(REQUEST_UPLOAD)
+    writer.writeByte(UPLOAD_DOWNLOAD_START)
+    writer.writeString(localPath)
+    return packet.getBuffer()
+    
+def uploadStartResponse():
+    packet = BaksysMemoryStream()
+    writer = BaksysBinaryWriter(packet)
+    writer.writeByte(RESPONSE_UPLOAD)
+    writer.writeByte(UPLOAD_DOWNLOAD_START)
+    return packet.getBuffer()
+    
+def uploadBreakRequest():
+    packet = BaksysMemoryStream()
+    writer = BaksysBinaryWriter(packet)
+    writer.writeByte(REQUEST_UPLOAD)
+    writer.writeByte(UPLOAD_DOWNLOAD_BREAK)
+    return packet.getBuffer()
+    
+def uploadBreakResponse():
+    packet = BaksysMemoryStream()
+    writer = BaksysBinaryWriter(packet)
+    writer.writeByte(RESPONSE_UPLOAD)
+    writer.writeByte(UPLOAD_DOWNLOAD_BREAK)
+    return packet.getBuffer()
+
+def uploadDataRequest(offset, data):
+    packet = BaksysMemoryStream()
+    writer = BaksysBinaryWriter(packet)
+    writer.writeByte(REQUEST_UPLOAD)
+    writer.writeByte(UPLOAD_DOWNLOAD_CONTINUE)
+    writer.writeLong(offset)
+    writer.writeLong(len(data))
+    writer.writeBuffer(data)
+    return packet.getBuffer()
+    
+def uploadFinishRequest():
+    packet = BaksysMemoryStream()
+    writer = BaksysBinaryWriter(packet)
+    writer.writeByte(RESPONSE_UPLOAD)
+    writer.writeByte(UPLOAD_DOWNLOAD_FINISH)
+    return packet.getBuffer()
+    
+def downloadStartResponse(size):
+    packet = BaksysMemoryStream()
+    writer = BaksysBinaryWriter(packet)
+    writer.writeByte(RESPONSE_DOWNLOAD)
+    writer.writeByte(UPLOAD_DOWNLOAD_START)
+    writer.writeLong(size)
+    return packet.getBuffer()
+
 def downloadRequest(remotePath):
     packet = BaksysMemoryStream()
     writer = BaksysBinaryWriter(packet)
