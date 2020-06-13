@@ -2,13 +2,14 @@ import os
 import json
 from   app.com.log import *
 
-BAKSYS_HOME      = os.path.expanduser('~/.baksys')
-BAKSYS_TEMPDIR   = os.path.join(BAKSYS_HOME, 'temp')
-BAKSYS_BACKUP    = os.path.join(BAKSYS_HOME, 'backup')
-BAKSYS_LOGS      = os.path.join(BAKSYS_HOME, 'logs')
-BAKSYS_ERROR_LOG = os.path.join(BAKSYS_LOGS, 'client.error.log')
-BAKSYS_CONFIG    = os.path.join(BAKSYS_HOME, 'client.json')
-BAKSYS_PORT      = 20003
+BAKSYS_HOME       = os.path.expanduser('~/.baksys')
+BAKSYS_TEMPDIR    = os.path.join(BAKSYS_HOME, 'temp')
+BAKSYS_BACKUP     = os.path.join(BAKSYS_HOME, 'backup')
+BAKSYS_LOGS       = os.path.join(BAKSYS_HOME, 'logs')
+BAKSYS_ERROR_LOG  = os.path.join(BAKSYS_LOGS, 'client.error.log')
+BAKSYS_SCRIPT_LOG = os.path.join(BAKSYS_LOGS, 'client.script.error.log')
+BAKSYS_CONFIG     = os.path.join(BAKSYS_HOME, 'client.json')
+BAKSYS_PORT       = 20003
 
 config = { }
 if not config:
@@ -17,7 +18,8 @@ if not config:
         with open(BAKSYS_CONFIG, 'r') as file:
             config = json.load(file)
             
-logger = BaksysLogger(BAKSYS_ERROR_LOG)
+logger       = BaksysLogger(BAKSYS_ERROR_LOG)
+scriptLogger = BaksysLogger(BAKSYS_SCRIPT_LOG)
 
 def saveConfig():
     with open(BAKSYS_CONFIG, 'w') as file:

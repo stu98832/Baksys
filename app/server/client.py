@@ -16,6 +16,9 @@ class BaksysUser:
         this.socket.close()
         
     def onDisconnect(this, socket):
+        if this.login:
+            this.backup.uploadInterrupted = True
+            this.backup.acceptUploadInterrutpt()
         this.socket.close()
         this.onDisconnect(this)
         
