@@ -49,13 +49,13 @@ class BaksysClientApp:
             'func':this.cmdBackupList }
         # this.commands['sync']        = { 'desc':'synchronize local backups from remote backups', \
         #     'func':this.cmdSync }
-        this.commands['remote-list'] = { 'desc':'update remote backups', \
+        this.commands['remote-list'] = { 'desc':'list remote backups', \
             'func':this.cmdRemoteList }
-        this.commands['remote-upload'] = { 'desc':'update remote backups', \
+        this.commands['remote-upload'] = { 'desc':'upload backup to remote', \
             'func':this.cmdRemoteUpload }
-        this.commands['remote-delete'] = { 'desc':'update remote backups', \
+        this.commands['remote-delete'] = { 'desc':'delete remote backup', \
             'func':this.cmdRemoteDelete }
-        this.commands['remote-download'] = { 'desc':'update remote backups', \
+        this.commands['remote-download'] = { 'desc':'download remote backup', \
             'func':this.cmdRemoteDownload }
         this.commands['remote-update'] = { 'desc':'update remote backups', \
             'func':this.cmdRemoteUpdate }
@@ -63,13 +63,13 @@ class BaksysClientApp:
         
     def showBackupList(this, backupList):
         buffersize = os.get_terminal_size()
-        fmt        = '%%-%ds %%-%ds %%%ds %%%ds' % (buffersize.columns-52, 30, 8, 10)
+        fmt        = '%%-%ds %%-%ds %%%ds %%%ds' % (15, buffersize.columns-37, 8, 10)
         backupPath = config['backup_path']
         
         print(fmt % ('backup', 'original path', 'CRC', 'size'))
         print('-'*(buffersize.columns-1))
         for item in backupList:
-            size_display = {'G':0x40000000, 'M':0x100000, 'K':0x400, '':0}
+            size_display = {'G':0x40000000, 'M':0x100000, 'K':0x400, '':1}
             for tag in size_display:
                 if item['size'] > size_display[tag]:
                     sizestr = '%d %sB' % (int(item['size']/size_display[tag]*100)/100, tag)
@@ -278,7 +278,7 @@ class BaksysClientApp:
                 print('can\'t restore on a file!')
                 return 
             elif len(os.listdir(path)) > 0:
-                override = console.askYesNo('directory \'%s\' is not empty, are you want to override?')
+                override = console.askYesNo('directory \'%s\' is not empty, are you want to override?' % path)
                 if not override:
                     print('restore operation canceled.')
                     return

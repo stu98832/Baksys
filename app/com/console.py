@@ -1,4 +1,5 @@
 import os
+
 def progressBar(message, percent):
     barlen   = os.get_terminal_size().columns-len(message)-3
     status   = '\r%%s[%%-%ds]' % (barlen)

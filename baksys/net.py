@@ -67,7 +67,8 @@ class BaksysClientSocket:
         if not this._connecting or not this._socket:
             raise RuntimeError('no connection')
             
-        this._thread = threading.Thread(target = this._recive, daemon=True)
+        this._thread = threading.Thread(target = this._recive)
+        this._thread.daemon = True
         this._thread.start()
         
     def _recive(this):
@@ -133,6 +134,7 @@ class BaksysServerSocket:
             raise RuntimeError('server is not listening')
             
         this._thread = threading.Thread(target = this._accept, daemon=True)
+        this._thread.daemon = True
         this._thread.start()
         
     def shutdown(this):

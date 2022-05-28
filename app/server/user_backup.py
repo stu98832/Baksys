@@ -53,6 +53,8 @@ class BaksysUserBackup:
             'size'       : 0,                                   \
             'total-size' : 0,                                   \
         }
+        if not os.path.exists(BAKSYS_TEMPDIR):
+            os.makedirs(BAKSYS_TEMPDIR)
         this.acceptUploadFile['file'] = open(this.acceptUploadFile['temp'], 'wb')
             
     def startUpload(this, client, path):

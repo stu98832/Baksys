@@ -4,9 +4,9 @@ import threading
 from   random              import random
 from   baksys.net          import *
 from   baksys.event        import *
+from   app.client          import handler
 from   app.client.setting  import *
-import app.client.handler    as handler
-import app.com.packet        as packet
+from   app.com             import packet
 import app.com.packet.login 
 import app.com.packet.backup 
 
@@ -104,6 +104,7 @@ class BaksysRemoteBackup:
             
         this.uploadInterrupted = False
         this.uploadThread = threading.Thread(target = upload)
+        this.uploadThread.daemon = True
         this.uploadThread.start()
         result = this.waitForResponse()
         

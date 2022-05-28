@@ -1,4 +1,4 @@
 from app.server import BaksysServerApp
 
-app = BaksysServerApp()
-app.run()
+server = BaksysServerApp()
+server.run()

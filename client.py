@@ -1,4 +1,4 @@
 from app.client import BaksysClientApp
 
-app = BaksysClientApp()
-app.run()
+client = BaksysClientApp()
+client.run()

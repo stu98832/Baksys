@@ -1,6 +1,6 @@
 import os
-import app.server.handler    as handler
-import app.com.packet        as packet
+from   app.server     import handler
+import app.com.packet as packet
 
 class BaksysUser:
     def __init__(this, socket):

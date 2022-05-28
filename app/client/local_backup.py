@@ -49,6 +49,7 @@ class BaksysLocalBackup:
         
     # restore backup
     def restore(this, backup, path, **option):
+        path     = os.path.expanduser(path)
         override = BaksysUtils.loadOption(option, 'override', False)
         totalFileCount    = 0
         totalDirCount     = 0
@@ -117,8 +118,10 @@ class BaksysLocalBackup:
     # end restore
         
     # backup specific directory or file
-    def backup(this, name, path, **option):  
-        source     = os.path.abspath(os.path.dirname(path))
+    def backup(this, name, path, **option): 
+        this._checkPathValid(name) 
+        path       = os.path.expanduser(path)
+        source     = os.path.dirname(path)
         target     = os.path.basename(path)
         override   = BaksysUtils.loadOption(option, 'override', False)
         backupFile = os.path.join(this.backupPath, name)
@@ -147,6 +150,11 @@ class BaksysLocalBackup:
             temppath = ''
             while temppath == '' or os.path.exists(temppath):
                 temppath = os.path.join(BAKSYS_TEMPDIR, 'tmp_%08X'%int(random()*0x100000000))
+                
+            if not os.path.exists(BAKSYS_TEMPDIR):
+                os.makedirs(BAKSYS_TEMPDIR)
+            if not os.path.exists(os.path.dirname(backupFile)):
+                os.makedirs(os.path.dirname(backupFile))
                 
             backup = BaksysBackup()
             backup.sPath = source

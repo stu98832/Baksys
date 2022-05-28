@@ -1,4 +1,5 @@
 import os
+import threading
 from   baksys.net            import *
 from   app.server.setting    import *
 from   app.server.client     import *
@@ -36,8 +37,16 @@ class BaksysServerApp:
     def run(this):
         this.socket.start('0.0.0.0', BAKSYS_PORT)
         this.socket.startAccept()
-        print('server has listened on port %d' % BAKSYS_PORT)
+        cmdThread = threading.Thread(target = this.commandMode, daemon = True)
+        cmdThread.start()
+        while this.socket.isListening():
+            import time
+            time.sleep(1)
         
+    def commandMode(this):
+        if not this.socket.isListening():
+            return
+        print('server has listened on port %d' % BAKSYS_PORT)
         print('\'help\' to show help message')
         while True:
             try:
